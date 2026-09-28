@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>长效干扰素患者管理助手</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- 顶部 -->
+    <header class="top-bar">
+        <div>
+            <div class="app-title">长效干扰素患者管理助手</div>
+            <div class="app-subtitle">慢性乙肝治疗随访</div>
+        </div>
+
+        <div class="doctor-badge">
+            医生管理
+        </div>
+    </header>
+
+
+    <!-- 主页面 -->
+    <main class="container">
+
+        <!-- 患者信息 -->
+        <section class="welcome-section">
+            <h1>张先生，您好</h1>
+            <p>欢迎回来，今天也请关注您的治疗情况。</p>
+        </section>
+
+
+        <!-- 治疗状态 -->
+        <section class="treatment-card">
+
+            <div class="card-header">
+                <div>
+                    <span class="label">当前治疗</span>
+                    <h2>聚乙二醇干扰素</h2>
+                </div>
+
+                <div class="status-badge">
+                    ● 正常
+                </div>
+            </div>
+
+            <div class="treatment-days">
+                <span>治疗第</span>
+                <strong>28</strong>
+                <span>天</span>
+            </div>
+
+            <div class="progress-area">
+
+                <div class="progress-info">
+                    <span>治疗进度</span>
+                    <span>28 / 48 周</span>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-value"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- 今日用药 -->
+        <section class="section-card">
+
+            <div class="section-title">
+                <h2>今日用药</h2>
+
+                <span class="completed">
+                    ✓ 已完成
+                </span>
+            </div>
+
+            <p class="medicine-name">
+                聚乙二醇干扰素
+            </p>
+
+            <p class="medicine-time">
+                今日用药记录已完成
+            </p>
+
+        </section>
+
+
+        <!-- 功能菜单 -->
+        <section class="function-grid">
+
+            <button class="function-card" onclick="openCheckin()">
+
+                <div class="function-icon">
+                    📝
+                </div>
+
+                <div>
+                    <h3>今日症状打卡</h3>
+                    <p>记录今天的身体情况</p>
+                </div>
+
+            </button>
+
+
+            <button class="function-card" onclick="openAI()">
+
+                <div class="function-icon">
+                    🤖
+                </div>
+
+                <div>
+                    <h3>AI用药助手</h3>
+                    <p>咨询治疗期间的问题</p>
+                </div>
+
+            </button>
+
+
+            <button class="function-card" onclick="showMessage('指标趋势功能即将上线')">
+
+                <div class="function-icon">
+                    📈
+                </div>
+
+                <div>
+                    <h3>指标变化</h3>
+                    <p>查看检查指标趋势</p>
+                </div>
+
+            </button>
+
+
+            <button class="function-card" onclick="showMessage('医生沟通功能即将上线')">
+
+                <div class="function-icon">
+                    👨‍⚕️
+                </div>
+
+                <div>
+                    <h3>联系医生</h3>
+                    <p>向主管医生反馈情况</p>
+                </div>
+
+            </button>
+
+        </section>
+
+
+        <!-- 健康提醒 -->
+        <section class="notice-card">
+
+            <div class="notice-icon">
+                💡
+            </div>
+
+            <div>
+                <h3>今日健康提醒</h3>
+
+                <p>
+                    请按医生制定的治疗方案进行用药和随访。
+                    如出现明显不适，请及时联系医生。
+                </p>
+            </div>
+
+        </section>
+
+
+        <!-- 医疗安全提示 -->
+        <section class="safety-notice">
+
+            <strong>医疗安全提示</strong>
+
+            <p>
+                本助手用于健康信息记录、用药教育和随访提醒，
+                不能替代医生诊断、处方或医疗决策。
+            </p>
+
+        </section>
+
+    </main>
+
+
+    <!-- AI页面 -->
+    <div id="aiPage" class="page-overlay">
+
+        <div class="ai-container">
+
+            <div class="ai-header">
+
+                <button onclick="closeAI()" class="back-button">
+                    ←
+                </button>
+
+                <div>
+                    <h2>AI用药助手</h2>
+                    <span>干扰素治疗智能问询</span>
+                </div>
+
+            </div>
+
+
+            <div id="chatBox" class="chat-box">
+
+                <div class="ai-message">
+
+                    <div class="avatar">
+                        AI
+                    </div>
+
+                    <div class="message-content">
+
+                        <p>
+                            您好，我是您的用药助手。
+                        </p>
+
+                        <p>
+                            我可以帮助您了解干扰素治疗期间常见的
+                            用药、症状和检查指标问题。
+                        </p>
+
+                        <p>
+                            但我不能替代医生进行诊断，
+                            也不能自行决定是否调整或停止治疗。
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- 示例问题 -->
+
+                <div class="quick-questions">
+
+                    <button onclick="askQuestion('打完干扰素后发烧正常吗？')">
+                        打完干扰素后发烧正常吗？
+                    </button>
+
+                    <button onclick="askQuestion('干扰素治疗期间为什么会乏力？')">
+                        为什么会出现乏力？
+                    </button>
+
+                    <button onclick="askQuestion('白细胞下降需要注意什么？')">
+                        白细胞下降需要注意什么？
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <!-- 输入框 -->
+
+            <div class="chat-input-area">
+
+                <input
+                    id="questionInput"
+                    type="text"
+                    placeholder="请输入您的问题……"
+                    onkeydown="handleEnter(event)"
+                >
+
+                <button onclick="sendQuestion()">
+                    发送
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- 症状打卡页面 -->
+
+    <div id="checkinPage" class="page-overlay">
+
+        <div class="checkin-container">
+
+            <div class="ai-header">
+
+                <button onclick="closeCheckin()" class="back-button">
+                    ←
+                </button>
+
+                <div>
+                    <h2>今日症状打卡</h2>
+                    <span>记录今天的身体情况</span>
+                </div>
+
+            </div>
+
+
+            <div class="checkin-content">
+
+                <label>
+                    今天体温（℃）
+                </label>
+
+                <input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    placeholder="例如：36.8"
+                >
+
+
+                <label>
+                    今天是否出现以下情况？
+                </label>
+
+
+                <div class="symptom-list">
+
+                    <label>
+                        <input type="checkbox">
+                        发热
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        乏力
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        头痛
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        恶心
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        食欲下降
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        注射部位反应
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        皮疹
+                    </label>
+
+                    <label>
+                        <input type="checkbox">
+                        睡眠变化
+                    </label>
+
+                </div>
+
+
+                <button
+                    class="submit-button"
+                    onclick="submitCheckin()"
+                >
+                    提交今日记录
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+</html>
