@@ -1,12 +1,19 @@
 // ============================================================
 // 长效干扰素患者管理助手
-// app.js - V1.1
-// 与 risk-engine/rules.js 配套
+// app.js - V2.0
+// 前端 → Backend API → Risk Engine
 // ============================================================
 
 
 // ============================================================
-// 一、AI 页面
+// 一、后端 API 地址
+// ============================================================
+
+const API_BASE_URL = "http://127.0.0.1:3000";
+
+
+// ============================================================
+// 二、AI 页面
 // ============================================================
 
 function openAI() {
@@ -44,7 +51,7 @@ function closeAI() {
 
 
 // ============================================================
-// 二、症状记录页面
+// 三、症状记录页面
 // ============================================================
 
 function openCheckin() {
@@ -74,7 +81,7 @@ function closeCheckin() {
 
 
 // ============================================================
-// 三、AI 快捷问题
+// 四、AI 快捷问题
 // ============================================================
 
 function askQuestion(question) {
@@ -93,10 +100,10 @@ function askQuestion(question) {
 
 
 // ============================================================
-// 四、发送 AI 问题
+// 五、发送问题
 // ============================================================
 
-function sendQuestion() {
+async function sendQuestion() {
 
     const input = document.getElementById("questionInput");
 
@@ -151,68 +158,125 @@ function sendQuestion() {
 
 
     // --------------------------------------------------------
-    // 2. 调用医疗安全规则引擎
+    // 2. 显示“正在安全检查”
     // --------------------------------------------------------
 
-    let checkResult = null;
+    const checkingMessage = document.createElement("div");
+
+    checkingMessage.className = "chat-message ai-message";
+
+    checkingMessage.innerHTML = `
+        <div class="message-label">
+            医疗安全检查
+        </div>
+
+        <div class="message-content">
+            正在进行医疗安全风险检查，请稍候……
+        </div>
+    `;
+
+    chatBox.appendChild(checkingMessage);
+
+    scrollChatToBottom();
 
 
-    // 检查 RiskEngine 是否正常加载
+    // --------------------------------------------------------
+    // 3. 调用后端风险 API
+    // --------------------------------------------------------
 
-    if (typeof RiskEngine === "undefined") {
-
-        console.error("RiskEngine 未加载，请检查 risk-engine/rules.js");
-
-        showAIMessage(
-            "⚠️ 医疗安全规则引擎暂时无法加载。为了保证安全，本次暂不继续 AI 回答，请联系医生。",
-            "RED"
-        );
-
-        return;
-    }
-
-
-    // 执行风险分析
+    let checkResult;
 
     try {
 
-        checkResult = RiskEngine.analyzeSymptoms(question);
+        const response = await fetch(
+            API_BASE_URL + "/api/risk/analyze",
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json; charset=utf-8"
+                },
+
+                body: JSON.stringify({
+                    text: question
+                })
+            }
+        );
+
+
+        // HTTP 状态检查
+
+        if (!response.ok) {
+
+            throw new Error(
+                "后端 API 返回 HTTP " + response.status
+            );
+        }
+
+
+        // 读取 JSON
+
+        const result = await response.json();
+
+
+        console.log(
+            "后端风险 API 返回：",
+            result
+        );
+
+
+        if (
+            !result ||
+            result.success !== true ||
+            !result.data
+        ) {
+
+            throw new Error(
+                "后端返回的数据格式不正确"
+            );
+        }
+
+
+        checkResult = result.data;
+
 
     } catch (error) {
 
-        console.error("RiskEngine 执行错误：", error);
-
-        showAIMessage(
-            "⚠️ 当前无法完成医疗安全风险检查。为了保证安全，本次暂不继续 AI 回答，请联系医生。",
-            "RED"
+        console.error(
+            "调用后端风险 API 失败：",
+            error
         );
 
-        return;
-    }
 
+        // 删除“正在检查”
 
-    // --------------------------------------------------------
-    // 3. 红色风险
-    // --------------------------------------------------------
+        if (checkingMessage.parentNode) {
+            checkingMessage.remove();
+        }
 
-    if (checkResult.level === "RED") {
 
         showAIMessage(
             `
-            <strong>🚨 医疗安全提示</strong>
+            <strong>⚠️ 暂时无法完成安全检查</strong>
 
             <p>
-                ${escapeHTML(checkResult.warning)}
+                当前无法连接医疗安全风险服务。
             </p>
 
             <p>
-                <strong>
-                    建议：${escapeHTML(checkResult.suggestAction)}
-                </strong>
+                为保证安全，本次暂不继续普通 AI 健康问答。
             </p>
 
             <p>
-                当前情况下，AI不会继续进行普通健康问答。
+                如您有明显或严重不适，请及时联系主管医生或前往医疗机构。
+            </p>
+
+            <p>
+                <small>
+                    技术提示：请确认后端服务
+                    http://127.0.0.1:3000
+                    正在运行。
+                </small>
             </p>
             `,
             "RED"
@@ -225,7 +289,105 @@ function sendQuestion() {
 
 
     // --------------------------------------------------------
-    // 4. 黄色风险
+    // 删除“正在检查”
+    // --------------------------------------------------------
+
+    if (checkingMessage.parentNode) {
+        checkingMessage.remove();
+    }
+
+
+    // --------------------------------------------------------
+    // 输出调试信息
+    // --------------------------------------------------------
+
+    console.log(
+        "========== 前端风险检查结果 =========="
+    );
+
+    console.log(
+        "患者问题：",
+        question
+    );
+
+    console.log(
+        "风险等级：",
+        checkResult.level
+    );
+
+    console.log(
+        "匹配关键词：",
+        checkResult.matchedKeyword
+    );
+
+    console.log(
+        "是否需要医生：",
+        checkResult.needDoctor
+    );
+
+    console.log(
+        "是否允许 AI：",
+        checkResult.allowAI
+    );
+
+    console.log(
+        "是否停止 AI：",
+        checkResult.stopAI
+    );
+
+    console.log(
+        "======================================"
+    );
+
+
+    // --------------------------------------------------------
+    // 4. RED：高风险
+    // --------------------------------------------------------
+
+    if (checkResult.level === "RED") {
+
+        showAIMessage(
+            `
+            <strong>🚨 医疗安全提示</strong>
+
+            <p>
+                ${escapeHTML(
+                    checkResult.warning ||
+                    "检测到需要进一步医疗评估的高风险信号。"
+                )}
+            </p>
+
+            <p>
+                <strong>
+                    建议：
+                    ${escapeHTML(
+                        checkResult.suggestAction ||
+                        "请及时联系主管医生或前往医疗机构进一步评估。"
+                    )}
+                </strong>
+            </p>
+
+            <p>
+                当前情况下，AI不会继续进行普通健康问答。
+            </p>
+
+            <p>
+                <small>
+                    如果症状严重或正在快速加重，请及时寻求线下医疗帮助。
+                </small>
+            </p>
+            `,
+            "RED"
+        );
+
+        scrollChatToBottom();
+
+        return;
+    }
+
+
+    // --------------------------------------------------------
+    // 5. YELLOW：需要进一步了解
     // --------------------------------------------------------
 
     if (checkResult.level === "YELLOW") {
@@ -245,11 +407,16 @@ function sendQuestion() {
                     </strong>
 
                     <ul>
-                        ${checkResult.followUpQuestions
-                            .map(function (item) {
-                                return `<li>${escapeHTML(item)}</li>`;
-                            })
-                            .join("")
+                        ${
+                            checkResult.followUpQuestions
+                                .map(function (item) {
+                                    return `
+                                        <li>
+                                            ${escapeHTML(item)}
+                                        </li>
+                                    `;
+                                })
+                                .join("")
                         }
                     </ul>
 
@@ -263,37 +430,30 @@ function sendQuestion() {
             <strong>⚠️ 风险提示</strong>
 
             <p>
-                ${escapeHTML(checkResult.warning)}
+                ${escapeHTML(
+                    checkResult.warning ||
+                    "检测到需要进一步了解的症状。"
+                )}
             </p>
 
             ${questionsHTML}
 
             <p>
-                ${escapeHTML(checkResult.suggestAction)}
+                ${escapeHTML(
+                    checkResult.suggestAction ||
+                    "请继续提供相关信息，并根据需要联系医生。"
+                )}
             </p>
 
             <p>
                 <small>
-                    本助手仅提供健康信息整理，不能替代医生的诊断和治疗决定。
+                    本助手仅提供健康信息整理，
+                    不能替代医生的诊断和治疗决定。
                 </small>
             </p>
             `,
             "YELLOW"
         );
-
-
-        /*
-         * 黄色风险不直接把患者判定为“安全”。
-         *
-         * 当前版本先进行安全提示和关键问题询问。
-         * 后续接入真实 AI 后：
-         *
-         * 患者回答关键问题
-         * ↓
-         * 风险规则重新判断
-         * ↓
-         * 再决定是否允许 AI 继续回答
-         */
 
         scrollChatToBottom();
 
@@ -302,32 +462,51 @@ function sendQuestion() {
 
 
     // --------------------------------------------------------
-    // 5. REVIEW：未知风险
+    // 6. REVIEW：信息不足
     // --------------------------------------------------------
 
     if (checkResult.level === "REVIEW") {
+
+        let questionsHTML = "";
+
+        if (
+            Array.isArray(checkResult.followUpQuestions)
+        ) {
+
+            questionsHTML = `
+                <ul>
+                    ${
+                        checkResult.followUpQuestions
+                            .map(function (item) {
+                                return `
+                                    <li>
+                                        ${escapeHTML(item)}
+                                    </li>
+                                `;
+                            })
+                            .join("")
+                    }
+                </ul>
+            `;
+        }
+
 
         showAIMessage(
             `
             <strong>ℹ️ 需要更多信息</strong>
 
             <p>
-                ${escapeHTML(checkResult.warning)}
+                ${escapeHTML(
+                    checkResult.warning ||
+                    "当前信息不足以判断风险等级。"
+                )}
             </p>
 
             <p>
                 为了更好地了解情况，请告诉我：
             </p>
 
-            <ul>
-                ${
-                    checkResult.followUpQuestions
-                        .map(function (item) {
-                            return `<li>${escapeHTML(item)}</li>`;
-                        })
-                        .join("")
-                }
-            </ul>
+            ${questionsHTML}
 
             <p>
                 当前不会把这种情况直接判断为“安全”。
@@ -343,14 +522,15 @@ function sendQuestion() {
 
 
     // --------------------------------------------------------
-    // 6. GREEN
+    // 7. GREEN：允许继续 AI
     // --------------------------------------------------------
 
     if (checkResult.level === "GREEN") {
 
         setTimeout(function () {
 
-            const answer = generateDemoAnswer(question);
+            const answer =
+                generateDemoAnswer(question);
 
             showAIMessage(
                 answer,
@@ -361,41 +541,81 @@ function sendQuestion() {
 
         }, 600);
 
+        return;
     }
 
+
+    // --------------------------------------------------------
+    // 8. 未知风险等级
+    // --------------------------------------------------------
+
+    showAIMessage(
+        `
+        <strong>⚠️ 医疗安全提示</strong>
+
+        <p>
+            当前风险状态无法确认。
+        </p>
+
+        <p>
+            为保证安全，本次暂不继续普通 AI 回答。
+        </p>
+
+        <p>
+            请联系主管医生。
+        </p>
+        `,
+        "RED"
+    );
+
+    scrollChatToBottom();
 }
 
 
 // ============================================================
-// 五、显示 AI 消息
+// 六、显示 AI 消息
 // ============================================================
 
 function showAIMessage(message, level) {
 
-    const chatBox = document.getElementById("chatMessages");
+    const chatBox =
+        document.getElementById("chatMessages");
 
     if (!chatBox) {
         return;
     }
 
 
-    const aiMessage = document.createElement("div");
+    const aiMessage =
+        document.createElement("div");
 
-    aiMessage.className = "chat-message ai-message";
+    aiMessage.className =
+        "chat-message ai-message";
 
 
-    let label = "AI健康助手";
+    let label =
+        "AI健康助手";
+
 
     if (level === "RED") {
-        label = "🚨 医疗安全提示";
+
+        label =
+            "🚨 医疗安全提示";
+
     }
 
     else if (level === "YELLOW") {
-        label = "⚠️ 风险提示";
+
+        label =
+            "⚠️ 风险提示";
+
     }
 
     else if (level === "REVIEW") {
-        label = "ℹ️ 信息补充";
+
+        label =
+            "ℹ️ 信息补充";
+
     }
 
 
@@ -417,12 +637,13 @@ function showAIMessage(message, level) {
 
 
 // ============================================================
-// 六、演示版知识库回答
+// 七、演示版知识库回答
 // ============================================================
 
 function generateDemoAnswer(question) {
 
-    const q = question.toLowerCase();
+    const q =
+        question.toLowerCase();
 
 
     // --------------------------------------------------------
@@ -437,26 +658,31 @@ function generateDemoAnswer(question) {
 
         return `
             <p>
-                长效干扰素治疗期间，部分患者可能出现发热、寒战、乏力等流感样症状。
+                长效干扰素治疗期间，部分患者可能出现发热、
+                寒战、乏力等流感样症状。
             </p>
 
             <p>
-                是否需要进一步处理，需要结合具体体温、持续时间、
-                伴随症状以及近期检查结果综合判断。
+                是否需要进一步处理，需要结合具体体温、
+                持续时间、伴随症状以及近期检查结果综合判断。
             </p>
 
             <p>
                 如果您正在发热，请记录：
-                <strong>体温、持续时间以及是否伴随其他症状。</strong>
+                <strong>
+                    体温、持续时间以及是否伴随其他症状。
+                </strong>
             </p>
 
             <p>
-                如症状明显加重，请及时联系主管医生或前往医疗机构。
+                如症状明显加重，请及时联系主管医生
+                或前往医疗机构。
             </p>
 
             <p>
                 <small>
-                    本回答仅用于健康信息参考，不能替代医生的诊断和治疗决定。
+                    本回答仅用于健康信息参考，
+                    不能替代医生的诊断和治疗决定。
                 </small>
             </p>
         `;
@@ -480,12 +706,15 @@ function generateDemoAnswer(question) {
 
             <p>
                 是否需要进一步处理，不能只看一个指标，
-                通常还需要结合具体数值、变化趋势、症状以及医生制定的治疗方案。
+                通常还需要结合具体数值、变化趋势、
+                症状以及医生制定的治疗方案。
             </p>
 
             <p>
                 您可以提供最近一次和上一次的检查结果，
-                我可以帮助您整理<strong>变化趋势</strong>，供您与医生沟通。
+                我可以帮助您整理
+                <strong>变化趋势</strong>，
+                供您与医生沟通。
             </p>
 
             <p>
@@ -556,37 +785,41 @@ function generateDemoAnswer(question) {
 
 
 // ============================================================
-// 七、防止 HTML 注入
+// 八、防止 HTML 注入
 // ============================================================
 
 function escapeHTML(text) {
 
-    const div = document.createElement("div");
+    const div =
+        document.createElement("div");
 
-    div.textContent = text;
+    div.textContent =
+        text == null ? "" : String(text);
 
     return div.innerHTML;
 }
 
 
 // ============================================================
-// 八、聊天框自动滚动
+// 九、聊天框自动滚动
 // ============================================================
 
 function scrollChatToBottom() {
 
-    const chatBox = document.getElementById("chatMessages");
+    const chatBox =
+        document.getElementById("chatMessages");
 
     if (!chatBox) {
         return;
     }
 
-    chatBox.scrollTop = chatBox.scrollHeight;
+    chatBox.scrollTop =
+        chatBox.scrollHeight;
 }
 
 
 // ============================================================
-// 九、Enter 发送
+// 十、Enter 发送
 // ============================================================
 
 function handleEnter(event) {
@@ -601,13 +834,15 @@ function handleEnter(event) {
 
 
 // ============================================================
-// 十、症状打卡
+// 十一、症状打卡
 // ============================================================
 
 function submitCheckin() {
 
     const temperatureInput =
-        document.getElementById("temperatureInput");
+        document.getElementById(
+            "temperatureInput"
+        );
 
 
     if (!temperatureInput) {
@@ -649,6 +884,7 @@ function submitCheckin() {
         temperature
     );
 
+
     console.log(
         "今日症状：",
         symptoms
@@ -666,10 +902,57 @@ function submitCheckin() {
 
 
 // ============================================================
-// 十一、普通提示
+// 十二、普通提示
 // ============================================================
 
 function showMessage(message) {
 
     alert(message);
+}
+
+
+// ============================================================
+// 十三、后端连接测试
+// ============================================================
+
+async function testBackendConnection() {
+
+    try {
+
+        const response =
+            await fetch(
+                API_BASE_URL + "/api/health"
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+
+        const result =
+            await response.json();
+
+
+        console.log(
+            "后端连接测试成功：",
+            result
+        );
+
+
+        return true;
+
+    } catch (error) {
+
+        console.error(
+            "后端连接测试失败：",
+            error
+        );
+
+
+        return false;
+    }
 }
