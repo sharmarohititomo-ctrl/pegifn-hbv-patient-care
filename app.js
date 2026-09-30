@@ -1,6 +1,6 @@
 // ============================================================
 // 长效干扰素患者管理助手
-// app.js - V2.0
+// app.js - V2.1
 // 前端 → Backend API → Risk Engine
 // ============================================================
 
@@ -462,7 +462,7 @@ async function sendQuestion() {
 
 
     // --------------------------------------------------------
-    // 6. REVIEW：信息不足
+    // 6. REVIEW：信息不足，但允许 AI 做一般健康教育
     // --------------------------------------------------------
 
     if (checkResult.level === "REVIEW") {
@@ -470,30 +470,102 @@ async function sendQuestion() {
         let questionsHTML = "";
 
         if (
-            Array.isArray(checkResult.followUpQuestions)
+            Array.isArray(checkResult.followUpQuestions) &&
+            checkResult.followUpQuestions.length > 0
         ) {
 
             questionsHTML = `
-                <ul>
-                    ${
-                        checkResult.followUpQuestions
-                            .map(function (item) {
-                                return `
-                                    <li>
-                                        ${escapeHTML(item)}
-                                    </li>
-                                `;
-                            })
-                            .join("")
-                    }
-                </ul>
+                <div class="follow-up-box">
+
+                    <strong>
+                        如果方便，可以继续补充：
+                    </strong>
+
+                    <ul>
+                        ${
+                            checkResult.followUpQuestions
+                                .map(function (item) {
+                                    return `
+                                        <li>
+                                            ${escapeHTML(item)}
+                                        </li>
+                                    `;
+                                })
+                                .join("")
+                        }
+                    </ul>
+
+                </div>
             `;
         }
 
 
+        // ----------------------------------------------------
+        // REVIEW 的核心安全判断
+        //
+        // 当前 Risk Engine：
+        // allowAI = true
+        // stopAI = false
+        //
+        // 因此允许继续进行一般健康教育。
+        // ----------------------------------------------------
+
+        if (
+            checkResult.allowAI === true &&
+            checkResult.stopAI !== true
+        ) {
+
+            setTimeout(function () {
+
+                const answer =
+                    generateDemoAnswer(question);
+
+                showAIMessage(
+                    `
+                    <div class="review-notice">
+
+                        <strong>ℹ️ 信息补充</strong>
+
+                        <p>
+                            当前没有检测到已经建立的高风险信号，
+                            但现有信息不足以完成完整风险判断。
+                        </p>
+
+                        ${questionsHTML}
+
+                    </div>
+
+                    <hr>
+
+                    <div>
+                        ${answer}
+                    </div>
+
+                    <p>
+                        <small>
+                            本回答用于健康信息整理和健康教育，
+                            不替代医生的诊断、处方或治疗决定。
+                        </small>
+                    </p>
+                    `,
+                    "REVIEW"
+                );
+
+                scrollChatToBottom();
+
+            }, 600);
+
+            return;
+        }
+
+
+        // ----------------------------------------------------
+        // REVIEW 但不允许 AI
+        // ----------------------------------------------------
+
         showAIMessage(
             `
-            <strong>ℹ️ 需要更多信息</strong>
+            <strong>ℹ️ 需要进一步评估</strong>
 
             <p>
                 ${escapeHTML(
@@ -503,13 +575,13 @@ async function sendQuestion() {
             </p>
 
             <p>
-                为了更好地了解情况，请告诉我：
+                为保证安全，当前暂不继续普通 AI 健康问答。
             </p>
 
             ${questionsHTML}
 
             <p>
-                当前不会把这种情况直接判断为“安全”。
+                如有明显或持续加重的不适，请及时联系主管医生。
             </p>
             `,
             "REVIEW"
