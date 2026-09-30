@@ -1,6 +1,6 @@
 // ============================================================
 // 长效干扰素患者管理助手
-// app.js - V3.1
+// app.js - V3.5
 //
 // 前端
 //   ↓
@@ -21,6 +21,8 @@
 // 6. AI 不自行诊断
 // 7. AI 不自行处方
 // 8. AI 不自行决定停药、减量或改变治疗方案
+// 9. 患者端明确使用 role = patient
+// 10. 患者端 RAG 只能获取 patient_education
 // ============================================================
 
 
@@ -42,7 +44,10 @@ function openAI() {
 
     if (!page) {
 
-        console.error("找不到 AI 页面：#aiOverlay");
+        console.error(
+            "找不到 AI 页面：#aiOverlay"
+        );
+
         return;
     }
 
@@ -69,7 +74,10 @@ function closeAI() {
 
     if (!page) {
 
-        console.error("找不到 AI 页面：#aiOverlay");
+        console.error(
+            "找不到 AI 页面：#aiOverlay"
+        );
+
         return;
     }
 
@@ -239,6 +247,23 @@ async function sendQuestion() {
 
     // --------------------------------------------------------
     // 3. 调用 Risk Engine
+    //
+    // V3.5 修复：
+    //
+    // Backend V2.4 /api/risk/analyze
+    // 要求：
+    //
+    // {
+    //     "question": "患者问题"
+    // }
+    //
+    // 原 V3.4 错误发送：
+    //
+    // {
+    //     "text": "患者问题"
+    // }
+    //
+    // 导致 Backend 返回 HTTP 400。
     // --------------------------------------------------------
 
     let checkResult;
@@ -247,31 +272,76 @@ async function sendQuestion() {
 
         const response =
             await fetch(
-                API_BASE_URL + "/api/risk/analyze",
+
+                API_BASE_URL +
+                "/api/risk/analyze",
+
                 {
+
                     method: "POST",
 
                     headers: {
+
                         "Content-Type":
                             "application/json; charset=utf-8"
+
                     },
 
                     body:
                         JSON.stringify({
-                            text: question
+
+                            // V3.5：
+                            // 与 Backend V2.4 保持一致
+                            question:
+                                question
+
                         })
+
                 }
+
             );
 
+
+        // ----------------------------------------------------
+        // HTTP 状态检查
+        // ----------------------------------------------------
 
         if (!response.ok) {
 
-            throw new Error(
+            let errorMessage =
                 "后端风险 API 返回 HTTP " +
-                response.status
+                response.status;
+
+            // 尝试读取后端具体错误
+            try {
+
+                const errorResult =
+                    await response.json();
+
+                if (
+                    errorResult &&
+                    errorResult.message
+                ) {
+
+                    errorMessage +=
+                        "：" +
+                        errorResult.message;
+                }
+
+            } catch (parseError) {
+
+                // 后端不是 JSON 时忽略
+            }
+
+            throw new Error(
+                errorMessage
             );
         }
 
+
+        // ----------------------------------------------------
+        // 读取 JSON
+        // ----------------------------------------------------
 
         const result =
             await response.json();
@@ -307,7 +377,9 @@ async function sendQuestion() {
         );
 
 
-        if (checkingMessage.parentNode) {
+        if (
+            checkingMessage.parentNode
+        ) {
 
             checkingMessage.remove();
         }
@@ -359,7 +431,9 @@ async function sendQuestion() {
     // 删除安全检查提示
     // --------------------------------------------------------
 
-    if (checkingMessage.parentNode) {
+    if (
+        checkingMessage.parentNode
+    ) {
 
         checkingMessage.remove();
     }
@@ -404,6 +478,11 @@ async function sendQuestion() {
     );
 
     console.log(
+        "患者端角色：",
+        "patient"
+    );
+
+    console.log(
         "======================================"
     );
 
@@ -421,13 +500,13 @@ async function sendQuestion() {
             `
 
             <strong>
-                🚨 医疗安全提示
+                🚨 需要及时处理
             </strong>
 
             <p>
                 ${escapeHTML(
                     checkResult.warning ||
-                    "检测到需要进一步医疗评估的高风险信号。"
+                    "当前信息提示可能存在需要进一步医疗评估的情况。"
                 )}
             </p>
 
@@ -467,9 +546,9 @@ async function sendQuestion() {
     // ========================================================
     // 5. YELLOW
     //
-    // 重要：
-    // YELLOW 不允许个体化 AI 决策，
-    // 但 Backend V2.1 允许安全知识库检索。
+    // YELLOW：
+    // 可以检索一般健康教育资料，
+    // 但不进行个体化治疗决策。
     // ========================================================
 
     if (
@@ -491,8 +570,12 @@ async function sendQuestion() {
                 <div class="follow-up-box">
 
                     <strong>
-                        为了进一步了解情况，请告诉我：
+                        📝 建议补充
                     </strong>
+
+                    <p>
+                        为了进一步了解情况，请告诉我：
+                    </p>
 
                     <ul>
 
@@ -520,39 +603,42 @@ async function sendQuestion() {
 
 
         // ----------------------------------------------------
-        // 先显示风险提示
+        // 风险评估
         // ----------------------------------------------------
 
         showAIMessage(
 
             `
 
-            <strong>
-                ⚠️ 风险提示
-            </strong>
+            <div class="risk-assessment">
 
-            <p>
-                ${escapeHTML(
-                    checkResult.warning ||
-                    "检测到需要进一步了解的症状。"
-                )}
-            </p>
+                <strong>
+                    当前需要进一步了解
+                </strong>
 
-            ${questionsHTML}
+                <p>
+                    ${escapeHTML(
+                        checkResult.warning ||
+                        "检测到需要进一步了解的症状。"
+                    )}
+                </p>
 
-            <p>
-                ${escapeHTML(
-                    checkResult.suggestAction ||
-                    "请继续提供相关信息，并根据需要联系医生。"
-                )}
-            </p>
+                ${questionsHTML}
 
-            <p>
-                <small>
-                    下面仅检索知识库中的一般健康教育资料，
-                    不用于判断您的具体治疗方案。
-                </small>
-            </p>
+                <p>
+                    请先补充几个关键情况，
+                    以便进一步了解风险。
+                </p>
+
+                <p>
+                    <strong>
+                        如果症状明显加重、持续不缓解，
+                        或出现呼吸困难、胸痛、意识异常等情况，
+                        请及时联系医生或寻求医疗帮助。
+                    </strong>
+                </p>
+
+            </div>
 
             `,
 
@@ -600,7 +686,7 @@ async function sendQuestion() {
                 <div class="follow-up-box">
 
                     <strong>
-                        如果方便，可以继续补充：
+                        📝 建议补充
                     </strong>
 
                     <ul>
@@ -640,7 +726,7 @@ async function sendQuestion() {
                 <div class="review-notice">
 
                     <strong>
-                        ℹ️ 信息补充
+                        当前信息不足
                     </strong>
 
                     <p>
@@ -649,11 +735,6 @@ async function sendQuestion() {
                     </p>
 
                     ${questionsHTML}
-
-                    <p>
-                        接下来将从患者健康知识库中
-                        检索一般健康教育资料。
-                    </p>
 
                 </div>
 
@@ -679,23 +760,27 @@ async function sendQuestion() {
 
             `
 
-            <strong>
-                ℹ️ 需要进一步评估
-            </strong>
+            <div class="review-notice">
 
-            <p>
-                ${escapeHTML(
-                    checkResult.warning ||
-                    "当前信息不足以判断风险等级。"
-                )}
-            </p>
+                <strong>
+                    当前需要进一步评估
+                </strong>
 
-            ${questionsHTML}
+                <p>
+                    ${escapeHTML(
+                        checkResult.warning ||
+                        "当前信息不足以判断风险等级。"
+                    )}
+                </p>
 
-            <p>
-                如有明显或持续加重的不适，
-                请及时联系主管医生。
-            </p>
+                ${questionsHTML}
+
+                <p>
+                    如有明显或持续加重的不适，
+                    请及时联系主管医生。
+                </p>
+
+            </div>
 
             `,
 
@@ -772,6 +857,9 @@ async function sendQuestion() {
 // 因此：
 // 可以展示知识库资料
 // 但不能让 AI 自行进行个体化治疗决策。
+//
+// V3.5：
+// 明确向后端传递 role = patient。
 // ============================================================
 
 async function retrieveRAGAnswer(
@@ -789,7 +877,7 @@ async function retrieveRAGAnswer(
     loadingMessage.innerHTML = `
 
         <div class="message-label">
-            知识库检索
+            📚 健康知识参考
         </div>
 
         <div class="message-content">
@@ -845,7 +933,11 @@ async function retrieveRAGAnswer(
                         JSON.stringify({
 
                             question:
-                                question
+                                question,
+
+                            // 当前明确为患者端
+                            role:
+                                "patient"
 
                         })
 
@@ -856,9 +948,32 @@ async function retrieveRAGAnswer(
 
         if (!response.ok) {
 
-            throw new Error(
+            let errorMessage =
                 "RAG API 返回 HTTP " +
-                response.status
+                response.status;
+
+            try {
+
+                const errorResult =
+                    await response.json();
+
+                if (
+                    errorResult &&
+                    errorResult.message
+                ) {
+
+                    errorMessage +=
+                        "：" +
+                        errorResult.message;
+                }
+
+            } catch (parseError) {
+
+                // 忽略非 JSON 错误
+            }
+
+            throw new Error(
+                errorMessage
             );
         }
 
@@ -873,6 +988,11 @@ async function retrieveRAGAnswer(
 
         console.log(
             result
+        );
+
+        console.log(
+            "当前 RAG 角色：",
+            result.role
         );
 
         console.log(
@@ -900,6 +1020,72 @@ async function retrieveRAGAnswer(
 
 
         // ----------------------------------------------------
+        // 治疗调整问题拦截
+        //
+        // V3.5：
+        // 如果后端已经判断患者问题属于
+        // 停药 / 减量 / 加量 / 换药 / 调整治疗，
+        // 前端不继续显示普通 RAG。
+        // ----------------------------------------------------
+
+        if (
+            result.treatmentDecisionBlocked === true
+        ) {
+
+            const decisionData =
+                result.data || {};
+
+            showAIMessage(
+
+                `
+
+                <div class="review-notice">
+
+                    <strong>
+                        ⚕️ ${escapeHTML(
+                            decisionData.title ||
+                            "治疗调整需要医生判断"
+                        )}
+                    </strong>
+
+                    <p>
+                        ${escapeHTML(
+                            decisionData.message ||
+                            result.answer ||
+                            "是否调整治疗方案，需要由主管医生结合完整情况判断。"
+                        )}
+                    </p>
+
+                    <p>
+                        <strong>
+                            ${escapeHTML(
+                                decisionData.suggestAction ||
+                                "请联系主管医生确认。"
+                            )}
+                        </strong>
+                    </p>
+
+                    <p>
+                        <small>
+                            本助手不会根据单项症状或检查结果，
+                            自行决定停药、减量、换药或改变治疗方案。
+                        </small>
+                    </p>
+
+                </div>
+
+                `,
+
+                "REVIEW"
+            );
+
+            scrollChatToBottom();
+
+            return;
+        }
+
+
+        // ----------------------------------------------------
         // RED 安全保护
         // ----------------------------------------------------
 
@@ -914,7 +1100,7 @@ async function retrieveRAGAnswer(
                 `
 
                 <strong>
-                    🚨 医疗安全提示
+                    🚨 需要及时处理
                 </strong>
 
                 <p>
@@ -939,16 +1125,7 @@ async function retrieveRAGAnswer(
 
 
         // ----------------------------------------------------
-        // 关键：
-        // 判断“是否允许检索”
-        //
-        // 而不是判断 aiAllowed。
-        //
-        // 因为：
-        //
-        // YELLOW
-        // aiAllowed = false
-        // retrievalAllowed = true
+        // 判断是否允许检索
         // ----------------------------------------------------
 
         if (
@@ -1008,30 +1185,34 @@ async function retrieveRAGAnswer(
 
                 `
 
-                <strong>
-                    ℹ️ 暂未找到足够的知识库资料
-                </strong>
+                <div class="review-notice">
 
-                <p>
-                    当前问题暂时没有检索到足够匹配的资料。
-                </p>
+                    <strong>
+                        暂未找到足够的知识库资料
+                    </strong>
 
-                <p>
-                    您可以进一步描述：
-                </p>
+                    <p>
+                        当前问题暂时没有检索到足够匹配的资料。
+                    </p>
 
-                <p>
-                    ① 当前使用的治疗方案<br>
-                    ② 出现的具体症状<br>
-                    ③ 症状开始时间<br>
-                    ④ 症状严重程度<br>
-                    ⑤ 最近一次检查结果
-                </p>
+                    <p>
+                        您可以进一步描述：
+                    </p>
 
-                <p>
-                    如果涉及具体治疗调整，
-                    请以主管医生的判断为准。
-                </p>
+                    <p>
+                        ① 当前使用的治疗方案<br>
+                        ② 出现的具体症状<br>
+                        ③ 症状开始时间<br>
+                        ④ 症状严重程度<br>
+                        ⑤ 最近一次检查结果
+                    </p>
+
+                    <p>
+                        如果涉及具体治疗调整，
+                        请以主管医生的判断为准。
+                    </p>
+
+                </div>
 
                 `,
 
@@ -1058,13 +1239,16 @@ async function retrieveRAGAnswer(
             );
 
 
+        // ----------------------------------------------------
+        // RAG 单独作为 UI 类型
+        // ----------------------------------------------------
+
         showAIMessage(
 
             answerHTML,
 
-            riskLevel === "YELLOW"
-                ? "YELLOW"
-                : "GREEN"
+            "RAG"
+
         );
 
 
@@ -1150,10 +1334,18 @@ function buildRAGAnswer(
 
         <div class="rag-answer">
 
-            <p>
-                根据当前患者健康知识库检索结果，
-                与您的问题相关的信息如下：
-            </p>
+            <div class="health-education-header">
+
+                <strong>
+                    📚 健康知识参考
+                </strong>
+
+                <p>
+                    根据当前患者健康知识库检索结果，
+                    与您的问题相关的信息如下：
+                </p>
+
+            </div>
 
     `;
 
@@ -1306,7 +1498,7 @@ function buildRAGAnswer(
         <div class="rag-safety-notice">
 
             <strong>
-                ⚠️ 重要提示
+                ⚕️ 医疗安全说明
             </strong>
 
             <p>
@@ -1342,7 +1534,9 @@ function buildRAGAnswer(
 // 八、格式化知识库内容
 // ============================================================
 
-function formatKnowledgeContent(content) {
+function formatKnowledgeContent(
+    content
+) {
 
     if (!content) {
 
@@ -1369,7 +1563,18 @@ function formatKnowledgeContent(content) {
 
 
 // ============================================================
-// 九、显示 AI 消息
+// 九、显示 AI 消息 V3.5
+//
+// 统一患者端信息层级：
+//
+// RED    → 医疗安全提示
+// YELLOW → 风险评估
+// REVIEW → 信息补充
+// GREEN  → 健康知识
+// RAG    → 健康知识参考
+//
+// RAG 单独作为 UI 类型，
+// 防止 RAG 内容继承 YELLOW 风险标签。
 // ============================================================
 
 function showAIMessage(
@@ -1385,6 +1590,10 @@ function showAIMessage(
 
     if (!chatBox) {
 
+        console.error(
+            "找不到聊天区域：#chatMessages"
+        );
+
         return;
     }
 
@@ -1399,8 +1608,12 @@ function showAIMessage(
         "chat-message ai-message";
 
 
+    // --------------------------------------------------------
+    // 根据风险等级确定患者看到的模块名称
+    // --------------------------------------------------------
+
     let label =
-        "AI健康助手";
+        "健康知识参考";
 
 
     if (
@@ -1417,7 +1630,7 @@ function showAIMessage(
     ) {
 
         label =
-            "⚠️ 风险提示";
+            "⚠️ 风险评估";
 
     }
 
@@ -1435,21 +1648,119 @@ function showAIMessage(
     ) {
 
         label =
-            "🤖 AI健康助手";
+            "📚 健康知识参考";
+
+    }
+
+    else if (
+        level === "RAG"
+    ) {
+
+        label = "";
     }
 
 
-    aiMessage.innerHTML = `
+    // --------------------------------------------------------
+    // CSS 标识
+    // --------------------------------------------------------
 
-        <div class="message-label">
-            ${label}
-        </div>
+    let levelClass =
+        "message-default";
 
-        <div class="message-content">
-            ${message}
-        </div>
 
-    `;
+    if (
+        level === "RED"
+    ) {
+
+        levelClass =
+            "message-red";
+
+    }
+
+    else if (
+        level === "YELLOW"
+    ) {
+
+        levelClass =
+            "message-yellow";
+
+    }
+
+    else if (
+        level === "REVIEW"
+    ) {
+
+        levelClass =
+            "message-review";
+
+    }
+
+    else if (
+        level === "GREEN"
+    ) {
+
+        levelClass =
+            "message-green";
+
+    }
+
+    else if (
+        level === "RAG"
+    ) {
+
+        levelClass =
+            "message-rag";
+    }
+
+
+    // --------------------------------------------------------
+    // RAG 专用 HTML
+    // --------------------------------------------------------
+
+    if (
+        level === "RAG"
+    ) {
+
+        aiMessage.innerHTML = `
+
+            <div class="
+                message-content
+                ${levelClass}
+            ">
+
+                ${message}
+
+            </div>
+
+        `;
+
+    }
+
+    else {
+
+        aiMessage.innerHTML = `
+
+            <div class="
+                message-label
+                ${levelClass}
+            ">
+
+                ${label}
+
+            </div>
+
+
+            <div class="
+                message-content
+                ${levelClass}
+            ">
+
+                ${message}
+
+            </div>
+
+        `;
+    }
 
 
     chatBox.appendChild(
@@ -1595,7 +1906,6 @@ async function submitCheckin() {
         "今日记录已完成。\n\n" +
 
         "当前版本已经接入风险引擎，" +
-
         "数据库暂未正式连接。"
 
     );
@@ -1702,7 +2012,10 @@ async function testRAGConnection() {
                         JSON.stringify({
 
                             question:
-                                "长效干扰素治疗期间有哪些常见不良反应？"
+                                "长效干扰素治疗期间有哪些常见不良反应？",
+
+                            role:
+                                "patient"
 
                         })
 
@@ -1715,9 +2028,32 @@ async function testRAGConnection() {
             !response.ok
         ) {
 
-            throw new Error(
+            let errorMessage =
                 "RAG API HTTP " +
-                response.status
+                response.status;
+
+            try {
+
+                const errorResult =
+                    await response.json();
+
+                if (
+                    errorResult &&
+                    errorResult.message
+                ) {
+
+                    errorMessage +=
+                        "：" +
+                        errorResult.message;
+                }
+
+            } catch (parseError) {
+
+                // 忽略
+            }
+
+            throw new Error(
+                errorMessage
             );
         }
 
@@ -1732,6 +2068,11 @@ async function testRAGConnection() {
 
         console.log(
             result
+        );
+
+        console.log(
+            "当前 RAG 角色：",
+            result.role
         );
 
         console.log(
@@ -1764,7 +2105,7 @@ document.addEventListener(
     function () {
 
         console.log(
-            "长效干扰素患者管理助手 V3.1 已加载"
+            "长效干扰素患者管理助手 V3.5 已加载"
         );
 
         console.log(
@@ -1776,6 +2117,11 @@ document.addEventListener(
             "RAG：",
             API_BASE_URL +
             "/api/ai/retrieve"
+        );
+
+        console.log(
+            "当前页面角色：",
+            "patient"
         );
 
     }
