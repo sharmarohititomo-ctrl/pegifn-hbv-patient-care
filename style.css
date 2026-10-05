@@ -260,6 +260,12 @@ body {
     transition: 0.2s;
 }
 
+a.function-card-link {
+    text-decoration: none;
+    color: inherit;
+    box-sizing: border-box;
+}
+
 .function-card:hover {
     transform: translateY(-2px);
 
@@ -485,6 +491,93 @@ body {
     margin-bottom: 0;
 }
 
+.risk-card {
+    border-radius: 12px;
+
+    padding: 4px 2px;
+}
+
+.risk-card ul {
+    margin: 8px 0 12px 18px;
+
+    padding: 0;
+}
+
+.risk-card li {
+    margin-bottom: 4px;
+}
+
+.message-red {
+    color: #991b1b;
+}
+
+.message-content.message-red {
+    background: #fef2f2;
+
+    border: 1px solid #fecaca;
+}
+
+.message-yellow {
+    color: #92400e;
+}
+
+.message-content.message-yellow {
+    background: #fffbeb;
+
+    border: 1px solid #fde68a;
+}
+
+.message-review {
+    color: #1e3a8a;
+}
+
+.message-content.message-review {
+    background: #eff6ff;
+
+    border: 1px solid #bfdbfe;
+}
+
+.message-treatment {
+    color: #9a3412;
+}
+
+.message-content.message-treatment {
+    background: #fff7ed;
+
+    border: 1px solid #fdba74;
+}
+
+.rag-document {
+    margin-top: 12px;
+
+    padding-top: 12px;
+
+    border-top: 1px solid #e5e7eb;
+}
+
+.rag-document-title {
+    font-weight: 600;
+
+    margin-bottom: 4px;
+}
+
+.rag-document-category,
+.rag-document-source {
+    font-size: 12px;
+
+    color: #6b7280;
+
+    margin-bottom: 8px;
+}
+
+.rag-safety-notice {
+    margin-top: 12px;
+
+    font-size: 13px;
+
+    color: #4b5563;
+}
+
 
 /* 患者消息 */
 
@@ -681,4 +774,529 @@ body {
     .symptom-list {
         grid-template-columns: 1fr;
     }
+}
+
+
+/* V2.8.2 健康档案 / 指标记录 */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: #f5f7fa;
+    z-index: 100;
+    overflow-y: auto;
+}
+
+.lab-page {
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100vh;
+    background: #ffffff;
+}
+
+.lab-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+}
+
+.lab-range-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lab-range-btn {
+    border: 1px solid #dbeafe;
+    background: #ffffff;
+    color: #2563eb;
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.lab-range-btn.is-active {
+    background: #2563eb;
+    color: #ffffff;
+}
+
+.lab-content {
+    padding: 20px 24px 40px;
+}
+
+.lab-section {
+    margin-bottom: 28px;
+}
+
+.lab-section h3 {
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.lab-chart-caption {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
+}
+
+.lab-latest-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+
+.lab-metric-card {
+    background: #f8fbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.lab-metric-card:hover {
+    border-color: #93c5fd;
+}
+
+.lab-metric-empty {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.lab-metric-name {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.lab-metric-value {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 8px 0 6px;
+    color: #1f2937;
+}
+
+.lab-metric-date {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.lab-chart-block {
+    margin-bottom: 18px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px;
+}
+
+.lab-chart-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.lab-chart-box {
+    min-height: 120px;
+}
+
+.lab-chart-empty,
+.lab-chart-hint {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.lab-svg {
+    width: 100%;
+    height: 180px;
+}
+
+.lab-svg-label {
+    font-size: 10px;
+    fill: #6b7280;
+}
+
+.lab-legend-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.lab-legend i {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+
+.lab-empty {
+    background: #f8fbff;
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+}
+
+.lab-empty p {
+    margin: 10px 0 16px;
+    color: #6b7280;
+}
+
+.lab-table-wrap {
+    overflow-x: auto;
+}
+
+.lab-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.lab-table th,
+.lab-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 8px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.lab-delete-btn {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    cursor: pointer;
+}
+
+.lab-form-overlay {
+    z-index: 120;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+}
+
+.lab-form-card {
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 22px;
+}
+
+.lab-form-card h3 {
+    margin-bottom: 12px;
+}
+
+.lab-form-card label {
+    display: block;
+    margin: 12px 0 6px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.lab-form-card input[type="text"],
+.lab-form-card input[type="date"],
+.lab-form-card textarea {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+}
+
+.lab-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lab-input-row input {
+    flex: 1;
+}
+
+.lab-dna-types {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.lab-dna-preview {
+    font-size: 13px;
+    color: #2563eb;
+    min-height: 18px;
+}
+
+.lab-form-error {
+    color: #b91c1c;
+    font-size: 13px;
+    min-height: 18px;
+}
+
+.lab-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.secondary-button {
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+}
+
+.primary-button {
+    border: none;
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+}
+
+@media (max-width: 900px) {
+    .lab-latest-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .lab-latest-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lab-timeline-item {
+        grid-template-columns: 1fr;
+    }
+
+    .lab-timeline-line {
+        display: none;
+    }
+}
+
+
+.lab-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.lab-latest-date {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.lab-chart-meta,
+.lab-chart-latest {
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.lab-chart-latest {
+    margin-top: 8px;
+    margin-bottom: 0;
+}
+
+.lab-timeline {
+    position: relative;
+}
+
+.lab-timeline-item {
+    display: grid;
+    grid-template-columns: 110px 18px 1fr;
+    gap: 12px;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+
+.lab-timeline-date {
+    font-weight: 700;
+    color: #1f2937;
+    padding-top: 12px;
+}
+
+.lab-timeline-line {
+    position: relative;
+    border-left: 2px solid #bfdbfe;
+    margin-left: 8px;
+}
+
+.lab-timeline-line::before {
+    content: "";
+    position: absolute;
+    left: -7px;
+    top: 16px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2563eb;
+}
+
+.lab-timeline-card {
+    background: #f8fbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+}
+
+.lab-timeline-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    font-size: 13px;
+}
+
+.lab-timeline-metrics strong {
+    display: block;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.lab-timeline-note {
+    margin-top: 10px;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.lab-detail-card {
+    max-width: 640px;
+}
+
+.lab-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    margin: 12px 0 16px;
+    font-size: 14px;
+}
+
+.lab-detail-history {
+    margin-top: 12px;
+    width: 100%;
+}
+
+.archive-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 12px 24px 0;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.archive-tab {
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    padding: 10px 4px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+}
+
+.archive-tab.is-active {
+    color: #2563eb;
+    font-weight: 600;
+    border-bottom-color: #2563eb;
+}
+
+.home-symptom-summary {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+.sx-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    font-size: 13px;
+}
+
+.sx-stat-card {
+    background: #f8fbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.sx-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.sx-card {
+    background: #f8fbff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 14px;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.sx-card h4 {
+    margin: 4px 0 8px;
+    font-size: 16px;
+}
+
+.sx-card p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.lab-form-card select {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    background: #ffffff;
+}
+
+@media (max-width: 600px) {
+    .sx-list,
+    .sx-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.ht-badge {
+    display: inline-block;
+    font-size: 12px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    margin-bottom: 8px;
+}
+
+.ht-badge-lab {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+.ht-badge-symptom {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.ht-event-card p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #4b5563;
+    word-break: break-word;
 }

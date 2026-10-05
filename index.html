@@ -285,7 +285,7 @@
 
                 <button
                     class="function-card"
-                    onclick="showMessage('检验趋势功能正在建设中。')"
+                    onclick="openLabRecords()"
                 >
 
                     <div class="function-icon">
@@ -293,11 +293,15 @@
                     </div>
 
                     <div class="function-name">
-                        检验趋势
+                        健康档案
                     </div>
 
                     <div class="function-desc">
-                        查看历史检查结果
+                        指标记录与趋势 / 症状记录
+                    </div>
+
+                    <div id="homeSymptomSummary" class="home-symptom-summary">
+                        最近症状：暂无症状记录
                     </div>
 
                 </button>
@@ -324,6 +328,31 @@
                     </div>
 
                 </button>
+
+
+
+                <!-- 医生端（开发演示入口） -->
+
+                <a
+                    class="function-card function-card-link"
+                    href="doctor/doctor.html"
+                >
+
+                    <div class="function-icon">
+                        🩺
+                    </div>
+
+                    <div>
+                        <div class="function-name">
+                            医生端
+                        </div>
+
+                        <div class="function-desc">
+                            开发演示版，非医院登录
+                        </div>
+                    </div>
+
+                </a>
 
             </div>
 
@@ -408,7 +437,7 @@
                 <div>
 
                     <strong>
-                        AI健康助手
+                        长效干扰素患者管理助手
                     </strong>
 
                     <span>
@@ -523,7 +552,7 @@
                 <input
                     id="questionInput"
                     type="text"
-                    placeholder="请描述您的问题，例如：最近有点乏力……"
+                    placeholder="请输入你的症状或问题……"
                     onkeydown="handleEnter(event)"
                 >
 
@@ -719,6 +748,501 @@
 
 
     <!-- =================================================
+         健康档案 V2.8.4
+    ================================================== -->
+
+    <div
+        id="labOverlay"
+        class="overlay"
+        style="display:none;"
+    >
+
+        <div class="lab-page">
+
+            <div class="ai-header">
+
+                <button
+                    class="back-button"
+                    onclick="closeLabRecords()"
+                >
+                    ←
+                </button>
+
+                <div>
+
+                    <strong>
+                        健康档案
+                    </strong>
+
+                    <span>
+                        V2.8.5 患者健康事件统一时间轴
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="archive-tabs">
+                <button type="button" id="archiveTabLab" class="archive-tab is-active" onclick="showArchiveTab('lab')">指标</button>
+                <button type="button" id="archiveTabSymptom" class="archive-tab" onclick="showArchiveTab('symptom')">症状</button>
+                <button type="button" id="archiveTabTimeline" class="archive-tab" onclick="showArchiveTab('timeline')">健康时间轴</button>
+            </div>
+
+            <div id="archiveLabPanel">
+
+            <div class="lab-toolbar">
+
+                <div class="lab-range-group">
+
+                    <button type="button" class="lab-range-btn" data-range="1m" onclick="setLabChartRange('1m')">近1个月</button>
+                    <button type="button" class="lab-range-btn is-active" data-range="3m" onclick="setLabChartRange('3m')">近3个月</button>
+                    <button type="button" class="lab-range-btn" data-range="6m" onclick="setLabChartRange('6m')">近6个月</button>
+                    <button type="button" class="lab-range-btn" data-range="1y" onclick="setLabChartRange('1y')">近1年</button>
+                    <button type="button" class="lab-range-btn" data-range="all" onclick="setLabChartRange('all')">全部</button>
+
+                </div>
+
+                <div class="lab-toolbar-right">
+                    <div id="labLatestDate" class="lab-latest-date">最近检测：暂无</div>
+                    <button
+                        type="button"
+                        class="primary-button"
+                        onclick="openLabForm()"
+                    >
+                        + 添加指标记录
+                    </button>
+                </div>
+
+            </div>
+
+            <div class="lab-content">
+
+                <section class="lab-section">
+
+                    <h3>最近一次指标</h3>
+
+                    <div id="labLatestCards" class="lab-latest-grid"></div>
+
+                </section>
+
+                <section class="lab-section">
+
+                    <h3>指标趋势</h3>
+
+                    <p class="lab-chart-caption">历史检测结果趋势</p>
+
+                    <div class="lab-chart-block">
+                        <div class="lab-chart-title">ALT / AST</div>
+                        <div id="labMetaAltAst" class="lab-chart-meta"></div>
+                        <div id="labChartAltAst" class="lab-chart-box"></div>
+                        <div id="labLatestAltAst" class="lab-chart-latest"></div>
+                    </div>
+
+                    <div class="lab-chart-block">
+                        <div class="lab-chart-title">PLT</div>
+                        <div id="labMetaPlt" class="lab-chart-meta"></div>
+                        <div id="labChartPlt" class="lab-chart-box"></div>
+                        <div id="labLatestPlt" class="lab-chart-latest"></div>
+                    </div>
+
+                    <div class="lab-chart-block">
+                        <div class="lab-chart-title">HBV DNA</div>
+                        <div id="labMetaHbvDna" class="lab-chart-meta"></div>
+                        <div id="labChartHbvDna" class="lab-chart-box"></div>
+                        <div id="labLatestHbvDna" class="lab-chart-latest"></div>
+                    </div>
+
+                    <div class="lab-chart-block">
+                        <div class="lab-chart-title">HBsAg</div>
+                        <div id="labMetaHbsAg" class="lab-chart-meta"></div>
+                        <div id="labChartHbsAg" class="lab-chart-box"></div>
+                        <div id="labLatestHbsAg" class="lab-chart-latest"></div>
+                    </div>
+
+                </section>
+
+                <section class="lab-section">
+
+                    <h3>指标时间轴</h3>
+
+                    <div id="labTimeline" class="lab-timeline"></div>
+
+                </section>
+
+                <section class="lab-section">
+
+                    <h3>历史指标记录</h3>
+
+                    <div id="labEmptyState" class="lab-empty" style="display:none;">
+
+                        <strong>还没有指标记录</strong>
+
+                        <p>
+                            记录您的ALT、AST、PLT、HBV DNA和HBsAg结果，可在后续查看历史变化。
+                        </p>
+
+                        <button
+                            type="button"
+                            class="primary-button"
+                            onclick="openLabForm()"
+                        >
+                            + 添加第一条记录
+                        </button>
+
+                    </div>
+
+                    <div id="labHistoryWrap" class="lab-table-wrap">
+
+                        <table class="lab-table">
+
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>ALT</th>
+                                    <th>AST</th>
+                                    <th>PLT</th>
+                                    <th>HBV DNA</th>
+                                    <th>HBsAg</th>
+                                    <th>备注</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="labHistoryBody"></tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </div>
+
+            </div>
+
+            <div id="archiveSymptomPanel" style="display:none;">
+
+                <div class="lab-toolbar">
+                    <div class="lab-range-group">
+                        <button type="button" class="sx-range-btn lab-range-btn" data-range="1m" onclick="setSymptomChartRange('1m')">近1个月</button>
+                        <button type="button" class="sx-range-btn lab-range-btn is-active" data-range="3m" onclick="setSymptomChartRange('3m')">近3个月</button>
+                        <button type="button" class="sx-range-btn lab-range-btn" data-range="6m" onclick="setSymptomChartRange('6m')">近6个月</button>
+                        <button type="button" class="sx-range-btn lab-range-btn" data-range="1y" onclick="setSymptomChartRange('1y')">近1年</button>
+                        <button type="button" class="sx-range-btn lab-range-btn" data-range="all" onclick="setSymptomChartRange('all')">全部</button>
+                    </div>
+                    <button type="button" class="primary-button" onclick="openSymptomForm()">+ 添加症状</button>
+                </div>
+
+                <div class="lab-content">
+
+                    <p class="lab-chart-caption">严重程度为患者自述，不代表系统风险分级。</p>
+
+                    <section class="lab-section">
+                        <h3>症状记录</h3>
+                        <div id="sxStats" class="sx-stats"></div>
+                    </section>
+
+                    <section class="lab-section">
+                        <h3>最近症状</h3>
+                        <div id="sxEmptyState" class="lab-empty" style="display:none;">
+                            <strong>还没有症状记录</strong>
+                            <p>记录您的近期症状，可在后续查看症状历史和时间轴。</p>
+                            <button type="button" class="primary-button" onclick="openSymptomForm()">+ 添加症状</button>
+                        </div>
+                        <div id="sxList" class="sx-list"></div>
+                    </section>
+
+                    <section class="lab-section">
+                        <h3>症状时间轴</h3>
+                        <div id="sxTimeline" class="lab-timeline"></div>
+                    </section>
+
+                    <section class="lab-section">
+                        <h3>历史记录</h3>
+                        <div id="sxHistoryWrap" class="lab-table-wrap">
+                            <table class="lab-table">
+                                <thead>
+                                    <tr>
+                                        <th>记录日期</th>
+                                        <th>症状</th>
+                                        <th>严重程度</th>
+                                        <th>开始日期</th>
+                                        <th>持续</th>
+                                        <th>备注</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sxHistoryBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                </div>
+
+            </div>
+
+            <div id="archiveHealthTimelinePanel" style="display:none;">
+
+                <div class="lab-toolbar">
+                    <div class="lab-range-group">
+                        <button type="button" class="ht-range-btn lab-range-btn" data-range="1m" onclick="setHealthTimelineRange('1m')">近1个月</button>
+                        <button type="button" class="ht-range-btn lab-range-btn is-active" data-range="3m" onclick="setHealthTimelineRange('3m')">近3个月</button>
+                        <button type="button" class="ht-range-btn lab-range-btn" data-range="6m" onclick="setHealthTimelineRange('6m')">近6个月</button>
+                        <button type="button" class="ht-range-btn lab-range-btn" data-range="1y" onclick="setHealthTimelineRange('1y')">近1年</button>
+                        <button type="button" class="ht-range-btn lab-range-btn" data-range="all" onclick="setHealthTimelineRange('all')">全部</button>
+                    </div>
+                </div>
+
+                <div class="lab-content">
+                    <p class="lab-chart-caption">本页仅按时间汇总已保存的指标与症状记录，不做医疗判断。严重程度为患者自述，不代表系统风险分级。</p>
+                    <section class="lab-section">
+                        <h3>健康时间轴</h3>
+                        <div id="htStats" class="sx-stats"></div>
+                    </section>
+                    <section class="lab-section">
+                        <div id="htEmptyState" class="lab-empty" style="display:none;">
+                            <strong>暂无健康记录</strong>
+                            <p>保存指标或症状后，可在此按时间查看。</p>
+                        </div>
+                        <div id="htTimeline" class="lab-timeline"></div>
+                    </section>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="labFormOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+
+        <div class="lab-form-card">
+
+            <h3>添加指标记录</h3>
+
+            <div id="labFormError" class="lab-form-error"></div>
+
+            <label>检测日期</label>
+            <input id="labDate" type="date">
+
+            <label>ALT</label>
+            <div class="lab-input-row">
+                <input id="labAlt" type="text" inputmode="decimal" placeholder="例如 32">
+                <span>U/L</span>
+            </div>
+
+            <label>AST</label>
+            <div class="lab-input-row">
+                <input id="labAst" type="text" inputmode="decimal" placeholder="例如 28">
+                <span>U/L</span>
+            </div>
+
+            <label>PLT</label>
+            <div class="lab-input-row">
+                <input id="labPlt" type="text" inputmode="decimal" placeholder="例如 168">
+                <span>×10⁹/L</span>
+            </div>
+
+            <label>HBV DNA</label>
+
+            <div class="lab-dna-types">
+                <label>
+                    <input type="radio" name="labDnaType" value="numeric" checked onchange="onHbvDnaTypeChange()">
+                    具体数值
+                </label>
+                <label>
+                    <input type="radio" name="labDnaType" value="below_detection_limit" onchange="onHbvDnaTypeChange()">
+                    低于检测下限
+                </label>
+                <label>
+                    <input type="radio" name="labDnaType" value="not_detected" onchange="onHbvDnaTypeChange()">
+                    未检出
+                </label>
+            </div>
+
+            <div id="labDnaNumericWrap" class="lab-input-row">
+                <input id="labDnaNumeric" type="text" inputmode="decimal" placeholder="例如 28">
+                <span>IU/mL</span>
+            </div>
+
+            <div id="labDnaLimitWrap" class="lab-input-row" style="display:none;">
+                <span>检测下限</span>
+                <input id="labDnaLimit" type="text" inputmode="decimal" value="20">
+                <span>IU/mL</span>
+            </div>
+
+            <p id="labDnaPreview" class="lab-dna-preview"></p>
+
+            <label>HBsAg</label>
+            <div class="lab-input-row">
+                <input id="labHbsAg" type="text" inputmode="decimal" placeholder="例如 0.68">
+                <span>IU/mL</span>
+            </div>
+
+            <label>备注</label>
+            <textarea id="labNote" rows="3" placeholder="选填"></textarea>
+
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeLabForm()">取消</button>
+                <button type="button" class="primary-button" onclick="submitLabRecord()">保存记录</button>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div
+        id="labDeleteOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <p>确定删除这条指标记录吗？</p>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeLabDeleteConfirm()">取消</button>
+                <button type="button" class="primary-button" id="labDeleteConfirmBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="labDetailOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card lab-detail-card">
+            <div id="labDetailContent"></div>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeIndicatorDetail()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="labDayOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <div id="labDayContent"></div>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeTimelineRecord()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="sxFormOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <h3>添加症状记录</h3>
+            <div id="sxFormError" class="lab-form-error"></div>
+
+            <label>记录日期</label>
+            <input id="sxDate" type="date">
+
+            <label>症状</label>
+            <select id="sxNameSelect" onchange="onSymptomNameChange()">
+                <option value="">请选择症状</option>
+                <option value="发热">发热</option>
+                <option value="头痛">头痛</option>
+                <option value="恶心">恶心</option>
+                <option value="乏力">乏力</option>
+                <option value="肌肉酸痛">肌肉酸痛</option>
+                <option value="脱发">脱发</option>
+                <option value="食欲下降">食欲下降</option>
+                <option value="注射部位不适">注射部位不适</option>
+                <option value="睡眠不佳">睡眠不佳</option>
+                <option value="其他">其他</option>
+            </select>
+
+            <div id="sxCustomWrap" style="display:none;">
+                <label>症状名称</label>
+                <input id="sxCustomName" type="text" placeholder="请输入症状名称">
+            </div>
+
+            <label>严重程度</label>
+            <div class="lab-dna-types">
+                <label><input type="radio" name="sxSeverity" value="轻度"> 轻度</label>
+                <label><input type="radio" name="sxSeverity" value="中度"> 中度</label>
+                <label><input type="radio" name="sxSeverity" value="重度"> 重度</label>
+            </div>
+            <p class="lab-chart-caption">严重程度为患者自述，不代表系统风险分级。</p>
+
+            <label>症状开始日期</label>
+            <input id="sxStartDate" type="date">
+
+            <label>持续时间</label>
+            <input id="sxDuration" type="text" placeholder="选填，例如 1天">
+
+            <label>备注</label>
+            <textarea id="sxNote" rows="3" placeholder="选填"></textarea>
+
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeSymptomForm()">取消</button>
+                <button type="button" class="primary-button" onclick="submitSymptomRecord()">保存记录</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="sxDetailOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <div id="sxDetailContent"></div>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeSymptomDetail()">关闭</button>
+                <button type="button" class="primary-button" id="sxDetailDeleteBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="sxDeleteOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <p>确定删除这条症状记录吗？</p>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeSymptomDeleteConfirm()">取消</button>
+                <button type="button" class="primary-button" id="sxDeleteConfirmBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div
+        id="htDetailOverlay"
+        class="overlay lab-form-overlay"
+        style="display:none;"
+    >
+        <div class="lab-form-card">
+            <div id="htDetailContent"></div>
+            <div class="lab-form-actions">
+                <button type="button" class="secondary-button" onclick="closeHealthTimelineDetail()">关闭</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- =================================================
          重要：脚本加载顺序
     ================================================== -->
 
@@ -730,6 +1254,21 @@
     <!-- ② 原有业务逻辑 -->
 
     <script src="app.js"></script>
+
+
+    <!-- ③ V2.8.3 患者指标记录与趋势 -->
+
+    <script src="lab-records.js"></script>
+
+
+    <!-- ④ V2.8.4 患者症状记录 + 症状时间轴 -->
+
+    <script src="symptom-records.js"></script>
+
+
+    <!-- ⑤ V2.8.5 患者健康事件统一时间轴 -->
+
+    <script src="health-timeline.js"></script>
 
 
 </body>
